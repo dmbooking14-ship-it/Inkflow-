@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Inkflow Dashboard</title>
+  <!-- EmailJS global script -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <style>
+    :root {
+      --gold: #c5a059;
+      --dark: #0d0d0d;
+      --glass: rgba(255,255,255,0.05);
+      --text: #eaeaea;
+    }
+    * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
+    body {
+      margin: 0;
+      background: #0b0f13;
+      color: var(--text);
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .card {
+      background: rgba(18, 26, 34, 0.9);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 20px;
+      border: 1px solid rgba(197,160,89,0.2);
+    }
+    h1, h2, h3 {
+      color: var(--gold);
+      margin-top: 0;
+    }
+    .booking-link-box {
+      background: #1a1a1a;
+      padding: 16px;
+      border-radius: 12px;
+      margin: 16px 0;
+    }
+    .link-url {
+      background: #0d0d0d;
+      padding: 12px;
+      border-radius: 8px;
+      word-break: break-all;
+      font-family: monospace;
+      border: 1px solid #333;
+      margin: 10px 0;
+    }
+    button {
+      background: var(--gold);
+      color: black;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-right: 8px;
+    }
+    .logout-btn {
+      background: #333;
+      color: white;
+    }
+    .date-picker {
+      width: 100%;
+      padding: 12px;
+      background: #1a1a1a;
+      color: white;
+      border: 1px solid var(--gold);
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .booking-card {
+      background: #11181f;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border-left: 4px solid var(--gold);
+    }
+    .booking-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .booking-date {
+      color: var(--gold);
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      background: #555;
+    }
+    .status-badge.pending { background: #b8860b; }
+    .status-badge.approved { background: #2a6b2a; }
+    .status-badge.declined { background: #8b3a3a; }
+    .booking-detail-row {
+      display: flex;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .detail-label {
+      width: 80px;
+      color: #aaa;
+    }
+    .detail-value {
+      flex: 1;
+      color: #e0e0e0;
+    }
+    .image-thumbnails {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .image-thumb {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid #333;
+      cursor: pointer;
+    }
+    .no-images {
+      color: #777;
+      font-style: italic;
+    }
+    .action-buttons {
+      margin-top: 12px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .approve-btn {
+      background: #2a6b2a;
+      color: white;
+    }
+    .decline-btn {
+      background: #8b3a3a;
+      color: white;
+    }
+    .delete-btn {
+      background: #6b2a2a;
+      color: white;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 12px;
+      background: #1a1a1a;
+      color: white;
+      border: 1px solid var(--gold);
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    .remove-blocked-btn {
+      background: #8b3a3a;
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .stat-box {
+      background: #1a2a35;
+      padding: 15px;
+      border-radius: 12px;
+      text-align: center;
+    }
+    .stat-number {
+      font-size: 28px;
+      font-weight: bold;
+      color: var(--gold);
+    }
+    .stat-label {
+      font-size: 12px;
+      color: #aaa;
+    }
+    .notes-area {
+      margin-top: 10px;
+      width: 100%;
+      background: #0a0f14;
+      color: white;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 13px;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="container">
+  <div class="card">
+    <h1>🎨 Inkflow Dashboard</h1>
+    <p>Welcome, <span id="artistName"></span> (@<span id="artistUsername"></span>)</p>
+    <button class="logout-btn" id="logoutBtn">Logout</button>
+  </div>
+
+  <div class="card">
+    <h2>🔗 Your Public Booking Link</h2>
+    <p>Share this link with clients:</p>
+    <div class="booking-link-box">
+      <div class="link-url" id="bookingLink"></div>
+      <button id="copyLinkBtn">Copy Link</button>
+      <button id="openLinkBtn">Open</button>
+    </div>
+  </div>
+
+  <!-- Analytics Card -->
+  <div class="card">
+    <h2>📊 Analytics</h2>
+    <div class="stats-grid" id="statsContainer">
+      <div class="stat-box"><div class="stat-number" id="totalBookings">0</div><div class="stat-label">Total</div></div>
+      <div class="stat-box"><div class="stat-number" id="pendingBookings">0</div><div class="stat-label">Pending</div></div>
+      <div class="stat-box"><div class="stat-number" id="approvedBookings">0</div><div class="stat-label">Approved</div></div>
+      <div class="stat-box"><div class="stat-number" id="declinedBookings">0</div><div class="stat-label">Declined</div></div>
+    </div>
+  </div>
+
+  <!-- Profile Editor Card -->
+  <div class="card">
+    <h2>👤 Profile Settings</h2>
+    <label>Display Name</label>
+    <input type="text" id="displayNameInput" placeholder="Your name">
+    <label>Username (unique)</label>
+    <input type="text" id="usernameInput" placeholder="username">
+    <button id="saveProfileBtn">Update Profile</button>
+    <p id="profileMsg" style="margin-top:8px; font-size:13px;"></p>
+  </div>
+
+  <!-- Payment Settings Card -->
+  <div class="card">
+    <h2>💰 Payment Settings</h2>
+    <label>Payment Details (e.g., PayPal.Me link or bank info)</label>
+    <textarea id="paymentDetailsInput" rows="2" placeholder="paypal.me/yourname or 'Send $200 to @yourcashapp'"></textarea>
+    <label>Custom Message to Client (optional)</label>
+    <input type="text" id="paymentMessageInput" placeholder="e.g., 'Please send payment within 48 hours to secure your spot.'">
+    <button id="savePaymentBtn">Save Payment Info</button>
+    <p id="paymentMsg" style="margin-top:8px; font-size:13px;"></p>
+  </div>
+
+  <!-- Pricing & Slot Settings Card -->
+  <div class="card">
+    <h2>🏷️ Booking Limits</h2>
+    <label>Minimum Booking Price ($)</label>
+    <input type="number" id="minPriceInput" min="0" step="10" value="200">
+    <label>Max Bookings Per Day</label>
+    <input type="number" id="maxSlotsInput" min="1" max="20" value="5">
+    <label>Budget Options (comma separated)</label>
+    <input type="text" id="budgetOptionsInput" value="$200-500, $500-1000, $1000+">
+    <button id="savePricingBtn">Save Limits & Pricing</button>
+    <p id="pricingMsg" style="margin-top:8px; font-size:13px;"></p>
+  </div>
+
+  <!-- Blocked Dates Card -->
+  <div class="card">
+    <h2>🚫 Blocked Dates</h2>
+    <p style="font-size:13px; color:#aaa;">Clients cannot book on these dates.</p>
+    <input type="date" id="blockDateInput" class="date-picker" style="margin-bottom:10px;">
+    <button id="addBlockedDateBtn">Add Date</button>
+    <div id="blockedDatesList" style="margin-top:15px;"></div>
+  </div>
+
+  <div class="card">
+    <h2>📅 Select Date</h2>
+    <input type="date" id="filterDate" class="date-picker">
+  </div>
+
+  <div class="card">
+    <h2>📋 Bookings for <span id="selectedDateDisplay">Today</span></h2>
+    <div id="bookingsList">Loading...</div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, query, where, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ========== CONFIGURATION – REPLACE THESE! ==========
+const EMAILJS_PUBLIC_KEY = "y5W0rJbtknIb2xmx8";
+const EMAILJS_SERVICE_ID = "service_cyknh4s";
+const EMAILJS_APPROVED_TEMPLATE_ID = "template_8yfw2ux";
+
+// ========== MASTER PAYMENT SWITCH ==========
+const ENFORCE_PAYMENT = false; // Change to true to enforce trials/payments
+// ==========================================
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAtzW6DFuLB_7cz8Q7RqMtR9kaijEGhI3k",
+  authDomain: "inkflow-534f6.firebaseapp.com",
+  projectId: "inkflow-534f6"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+emailjs.init(EMAILJS_PUBLIC_KEY);
+
+let currentArtistEmail = null;
+let currentUsername = null;
+let currentArtistDocRef = null;
+let currentArtistData = null;
+
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('filterDate').value = today;
+document.getElementById('selectedDateDisplay').textContent = today;
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    location.href = "login.html";
+    return;
+  }
+
+  currentArtistDocRef = doc(db, "artists", user.uid);
+  const artistSnap = await getDoc(currentArtistDocRef);
+  
+  let artistData;
+  if (!artistSnap.exists()) {
+    alert("Artist profile not found. Please sign up again.");
+    await signOut(auth);
+    location.href = "signup.html";
+    return;
+  }
+  
+  artistData = artistSnap.data();
+  
+  // Ensure all required fields exist with defaults (in‑memory only)
+  if (!artistData.status) artistData.status = 'trial';
+  if (!artistData.trialEndsAt) artistData.trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  if (!artistData.minPrice) artistData.minPrice = 200;
+  if (!artistData.maxSlotsPerDay) artistData.maxSlotsPerDay = 5;
+  if (!artistData.budgetOptions) artistData.budgetOptions = ['$200-500', '$500-1000', '$1000+'];
+  if (!artistData.paymentDetails) artistData.paymentDetails = '';
+  if (!artistData.paymentMessage) artistData.paymentMessage = '';
+  if (!artistData.blockedDates) artistData.blockedDates = [];
+
+  // === PAYMENT GATE (only if ENFORCE_PAYMENT is true) ===
+  if (ENFORCE_PAYMENT) {
+    const now = new Date();
+    if (artistData.status === 'trial' && artistData.trialEndsAt.toDate() < now) {
+      try { await updateDoc(currentArtistDocRef, { status: 'expired' }); } catch(e) {}
+      location.href = "payment.html";
+      return;
+    }
+    if (artistData.status === 'active' && artistData.plan && artistData.plan !== 'lifetime') {
+      if (!artistData.subscriptionEndsAt) {
+        location.href = "payment.html";
+        return;
+      }
+      if (artistData.subscriptionEndsAt.toDate() < now) {
+        try { await updateDoc(currentArtistDocRef, { status: 'expired' }); } catch(e) {}
+        location.href = "payment.html";
+        return;
+      }
+    }
+    if (artistData.status === 'expired') {
+      location.href = "payment.html";
+      return;
+    }
+  }
+
+  currentArtistData = artistData;
+  currentArtistEmail = artistData.email;
+  currentUsername = artistData.username;
+
+  document.getElementById("artistName").textContent = artistData.displayName || currentArtistEmail.split('@')[0];
+  document.getElementById("artistUsername").textContent = currentUsername;
+
+  const bookingUrl = `${window.location.origin}/booking.html?artist=${currentUsername}`;
+  document.getElementById("bookingLink").textContent = bookingUrl;
+
+  document.getElementById("copyLinkBtn").onclick = () => {
+    navigator.clipboard.writeText(bookingUrl);
+    alert("Link copied!");
+  };
+  document.getElementById("openLinkBtn").onclick = () => window.open(bookingUrl, '_blank');
+
+  document.getElementById('displayNameInput').value = artistData.displayName || '';
+  document.getElementById('usernameInput').value = artistData.username || '';
+  document.getElementById('paymentDetailsInput').value = artistData.paymentDetails || '';
+  document.getElementById('paymentMessageInput').value = artistData.paymentMessage || '';
+  document.getElementById('minPriceInput').value = artistData.minPrice;
+  document.getElementById('maxSlotsInput').value = artistData.maxSlotsPerDay;
+  document.getElementById('budgetOptionsInput').value = (artistData.budgetOptions || []).join(', ');
+
+  renderBlockedDates(artistData.blockedDates);
+  
+  await loadAnalytics();
+  await loadBookingsForDate(today);
+});
+
+// --- Analytics ---
+async function loadAnalytics() {
+  if (!currentArtistEmail) return;
+  const q = query(collection(db, "bookings"), where("artistEmail", "==", currentArtistEmail));
+  const snap = await getDocs(q);
+  const bookings = [];
+  snap.forEach(doc => bookings.push(doc.data()));
+  
+  const total = bookings.length;
+  const pending = bookings.filter(b => !b.status || b.status === 'pending').length;
+  const approved = bookings.filter(b => b.status === 'approved').length;
+  const declined = bookings.filter(b => b.status === 'declined').length;
+  
+  document.getElementById('totalBookings').textContent = total;
+  document.getElementById('pendingBookings').textContent = pending;
+  document.getElementById('approvedBookings').textContent = approved;
+  document.getElementById('declinedBookings').textContent = declined;
+}
+
+// --- Profile Editor ---
+document.getElementById('saveProfileBtn').addEventListener('click', async () => {
+  if (!currentArtistDocRef) return;
+  const newDisplayName = document.getElementById('displayNameInput').value.trim();
+  const newUsername = document.getElementById('usernameInput').value.trim().toLowerCase();
+  const msgEl = document.getElementById('profileMsg');
+  
+  if (!newDisplayName || !newUsername) {
+    msgEl.textContent = 'Both fields are required.';
+    msgEl.style.color = '#ff6b6b';
+    return;
+  }
+  if (!/^[a-zA-Z0-9_-]{3,20}$/.test(newUsername)) {
+    msgEl.textContent = 'Username must be 3-20 characters (letters, numbers, _ or -)';
+    msgEl.style.color = '#ff6b6b';
+    return;
+  }
+
+  if (newUsername !== currentUsername) {
+    const q = query(collection(db, 'artists'), where('username', '==', newUsername));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      msgEl.textContent = 'Username already taken.';
+      msgEl.style.color = '#ff6b6b';
+      return;
+    }
+  }
+
+  try {
+    await updateDoc(currentArtistDocRef, { displayName: newDisplayName, username: newUsername });
+    currentUsername = newUsername;
+    document.getElementById("artistName").textContent = newDisplayName;
+    document.getElementById("artistUsername").textContent = newUsername;
+    const newBookingUrl = `${window.location.origin}/booking.html?artist=${newUsername}`;
+    document.getElementById("bookingLink").textContent = newBookingUrl;
+    msgEl.textContent = '✅ Profile updated!';
+    msgEl.style.color = '#7ccf7c';
+  } catch (err) {
+    msgEl.textContent = '❌ Update failed.';
+    msgEl.style.color = '#ff6b6b';
+  }
+});
+
+// --- Payment Info ---
+document.getElementById('savePaymentBtn').addEventListener('click', async () => {
+  if (!currentArtistDocRef) return;
+  const paymentDetails = document.getElementById('paymentDetailsInput').value.trim();
+  const paymentMessage = document.getElementById('paymentMessageInput').value.trim();
+  try {
+    await updateDoc(currentArtistDocRef, { paymentDetails, paymentMessage });
+    document.getElementById('paymentMsg').textContent = '✅ Payment info saved!';
+    document.getElementById('paymentMsg').style.color = '#7ccf7c';
+  } catch (err) {
+    document.getElementById('paymentMsg').textContent = '❌ Failed to save.';
+    document.getElementById('paymentMsg').style.color = '#ff6b6b';
+  }
+});
+
+// --- Pricing & Slot Limits ---
+document.getElementById('savePricingBtn').addEventListener('click', async () => {
+  if (!currentArtistDocRef) return;
+  const minPrice = parseInt(document.getElementById('minPriceInput').value);
+  const maxSlots = parseInt(document.getElementById('maxSlotsInput').value);
+  const budgetOptions = document.getElementById('budgetOptionsInput').value.split(',').map(s => s.trim()).filter(s => s);
+  if (isNaN(minPrice) || minPrice < 0 || isNaN(maxSlots) || maxSlots < 1) {
+    document.getElementById('pricingMsg').textContent = 'Invalid values.';
+    document.getElementById('pricingMsg').style.color = '#ff6b6b';
+    return;
+  }
+  try {
+    await updateDoc(currentArtistDocRef, { minPrice, maxSlotsPerDay: maxSlots, budgetOptions });
+    document.getElementById('pricingMsg').textContent = '✅ Settings saved!';
+    document.getElementById('pricingMsg').style.color = '#7ccf7c';
+  } catch (err) {
+    document.getElementById('pricingMsg').textContent = '❌ Failed to save.';
+    document.getElementById('pricingMsg').style.color = '#ff6b6b';
+  }
+});
+
+// --- Blocked Dates ---
+function renderBlockedDates(blockedDates) {
+  const container = document.getElementById('blockedDatesList');
+  if (!blockedDates || blockedDates.length === 0) {
+    container.innerHTML = '<p style="color:#aaa;">No blocked dates.</p>';
+    return;
+  }
+  let html = '<ul style="padding-left:20px; margin:0;">';
+  blockedDates.sort().forEach(date => {
+    html += `<li style="margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
+      ${date}
+      <button class="remove-blocked-btn" data-date="${date}">Remove</button>
+    </li>`;
+  });
+  html += '</ul>';
+  container.innerHTML = html;
+
+  document.querySelectorAll('.remove-blocked-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const dateToRemove = btn.dataset.date;
+      const updated = currentArtistData.blockedDates.filter(d => d !== dateToRemove);
+      await updateDoc(currentArtistDocRef, { blockedDates: updated });
+      currentArtistData.blockedDates = updated;
+      renderBlockedDates(updated);
+    });
+  });
+}
+
+document.getElementById('addBlockedDateBtn').addEventListener('click', async () => {
+  const input = document.getElementById('blockDateInput');
+  const newDate = input.value;
+  if (!newDate) return alert('Select a date.');
+  if (currentArtistData.blockedDates.includes(newDate)) return alert('Date already blocked.');
+  const updated = [...currentArtistData.blockedDates, newDate];
+  await updateDoc(currentArtistDocRef, { blockedDates: updated });
+  currentArtistData.blockedDates = updated;
+  renderBlockedDates(updated);
+  input.value = '';
+});
+
+// Date filter
+document.getElementById('filterDate').addEventListener('change', async (e) => {
+  const selected = e.target.value;
+  document.getElementById('selectedDateDisplay').textContent = selected;
+  await loadBookingsForDate(selected);
+});
+
+// ========== UPDATED loadBookingsForDate with better error messages ==========
+async function loadBookingsForDate(dateStr) {
+  if (!currentArtistEmail) return;
+  const listDiv = document.getElementById('bookingsList');
+  listDiv.innerHTML = 'Loading...';
+
+  try {
+    const allQuery = query(
+      collection(db, "bookings"),
+      where("artistEmail", "==", currentArtistEmail)
+    );
+    const allSnap = await getDocs(allQuery);
+    
+    const q = query(
+      collection(db, "bookings"),
+      where("artistEmail", "==", currentArtistEmail),
+      where("date", "==", dateStr)
+    );
+    const snap = await getDocs(q);
+    
+    if (snap.empty) {
+      listDiv.innerHTML = `<p>No bookings for ${dateStr}.</p>
+        <p style="font-size:12px; color:#aaa;">Total bookings in system: ${allSnap.size}</p>
+        <button id="showAllBtn" style="background:#333; color:white; padding:8px 16px; margin-top:10px;">Show All Bookings</button>`;
+      
+      document.getElementById('showAllBtn')?.addEventListener('click', async () => {
+        await loadAllBookings(currentArtistEmail);
+      });
+      return;
+    }
+
+    const bookings = [];
+    snap.forEach(doc => bookings.push({ id: doc.id, ref: doc.ref, ...doc.data() }));
+    bookings.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+
+    const artistSnap = await getDoc(currentArtistDocRef);
+    const artistData = artistSnap.data();
+    const paymentDetails = artistData.paymentDetails || 'Payment details not set.';
+    const paymentMessage = artistData.paymentMessage || 'Please complete payment to secure your appointment.';
+
+    let html = "";
+    bookings.forEach(b => {
+      const imageUrls = b.image_urls ? b.image_urls.split(',') : [];
+      const status = b.status || 'pending';
+      const statusClass = status === 'approved' ? 'approved' : (status === 'declined' ? 'declined' : 'pending');
+      const notes = b.notes || '';
+      
+      html += `
+        <div class="booking-card" id="booking-${b.id}">
+          <div class="booking-header">
+            <span class="booking-date">${b.date}</span>
+            <span class="status-badge ${statusClass}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>
+          </div>
+          <div class="booking-detail-row">
+            <span class="detail-label">Client</span>
+            <span class="detail-value">${b.name} ${b.ig ? '@'+b.ig : ''} (${b.client_email || 'no email'})</span>
+          </div>
+          <div class="booking-detail-row">
+            <span class="detail-label">Placement</span>
+            <span class="detail-value">${b.placement || '—'}</span>
+          </div>
+          <div class="booking-detail-row">
+            <span class="detail-label">Size</span>
+            <span class="detail-value">${b.size || '—'} inches</span>
+          </div>
+          <div class="booking-detail-row">
+            <span class="detail-label">Style</span>
+            <span class="detail-value">${b.style || '—'}</span>
+          </div>
+          <div class="booking-detail-row">
+            <span class="detail-label">Budget</span>
+            <span class="detail-value">${b.budget || '—'}</span>
+          </div>
+          <div class="booking-detail-row">
+            <span class="detail-label">Idea</span>
+            <span class="detail-value">${b.details || '—'}</span>
+          </div>
+          ${imageUrls.length > 0 ? `
+            <div style="margin-top:12px;">
+              <span class="detail-label">Images</span>
+              <div class="image-thumbnails">
+                ${imageUrls.map(url => `<img src="${url}" class="image-thumb" onclick="window.open('${url}')">`).join('')}
+              </div>
+            </div>
+          ` : '<div class="no-images" style="margin-top:10px;">📷 No images</div>'}
+          
+          <!-- Notes section -->
+          <div style="margin-top:12px;">
+            <label style="font-size:12px; color:#aaa;">Private Notes</label>
+            <textarea class="notes-area" data-id="${b.id}" placeholder="Add private notes here...">${notes}</textarea>
+            <button class="save-notes-btn" data-id="${b.id}" style="background:#333; color:white; padding:6px 12px; font-size:12px; margin-top:5px;">Save Note</button>
+          </div>
+          
+          <div class="action-buttons">
+            ${status === 'pending' ? `
+              <button class="approve-btn" data-id="${b.id}" data-client-email="${b.client_email}" data-client-name="${b.name}" data-date="${b.date}" data-placement="${b.placement}" data-size="${b.size}" data-style="${b.style}" data-budget="${b.budget}">✅ Approve</button>
+              <button class="decline-btn" data-id="${b.id}">❌ Decline</button>
+            ` : ''}
+            <button class="delete-btn" data-id="${b.id}" data-date="${b.date}">🗑️ Delete</button>
+          </div>
+        </div>
+      `;
+    });
+    listDiv.innerHTML = html;
+
+    // --- Save Notes Listeners ---
+    document.querySelectorAll('.save-notes-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const bookingId = btn.dataset.id;
+        const textarea = document.querySelector(`.notes-area[data-id="${bookingId}"]`);
+        const newNote = textarea.value.trim();
+        try {
+          const bookingRef = doc(db, 'bookings', bookingId);
+          await updateDoc(bookingRef, { notes: newNote });
+          alert('Note saved!');
+        } catch (err) {
+          alert('Failed to save note: ' + err.message);
+        }
+      });
+    });
+
+    // --- Approve Listeners (with improved error messages) ---
+    document.querySelectorAll('.approve-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const bookingId = btn.dataset.id;
+        const clientEmail = btn.dataset.clientEmail;
+        const clientName = btn.dataset.clientName;
+        const date = btn.dataset.date;
+        const placement = btn.dataset.placement;
+        const size = btn.dataset.size;
+        const style = btn.dataset.style;
+        const budget = btn.dataset.budget;
+        
+        if (!clientEmail) {
+          alert('Cannot approve: Client did not provide an email address.');
+          return;
+        }
+
+        try {
+          const bookingRef = doc(db, 'bookings', bookingId);
+          await updateDoc(bookingRef, { status: 'approved' });
+
+          const templateParams = {
+            to_email: clientEmail,
+            client_name: clientName,
+            date, placement, size, style, budget,
+            payment_details: paymentDetails,
+            payment_message: paymentMessage
+          };
+          await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_APPROVED_TEMPLATE_ID, templateParams);
+          alert('Booking approved and client notified!');
+          await loadBookingsForDate(dateStr);
+          await loadAnalytics();
+        } catch (err) {
+          console.error(err);
+          let errorMsg = err.message;
+          if (err.code === 'permission-denied') {
+            errorMsg = 'Firestore permission denied. Check rules.';
+          } else if (err.name === 'EmailJSResponseStatus') {
+            errorMsg = `Email failed: ${err.text || 'Unknown email error'}`;
+          }
+          alert('Error approving booking: ' + errorMsg);
+        }
+      });
+    });
+
+    // --- Decline Listeners ---
+    document.querySelectorAll('.decline-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const bookingId = btn.dataset.id;
+        try {
+          await updateDoc(doc(db, 'bookings', bookingId), { status: 'declined' });
+          await loadBookingsForDate(dateStr);
+          await loadAnalytics();
+        } catch (err) {
+          alert('Error declining booking: ' + (err.message || 'Permission denied'));
+        }
+      });
+    });
+
+    // --- Delete Listeners ---
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const bookingId = btn.dataset.id;
+        const bookingDate = btn.dataset.date;
+        if (!confirm('Permanently delete this booking? The slot will become available again.')) return;
+        
+        try {
+          const bookingRef = doc(db, 'bookings', bookingId);
+          await deleteDoc(bookingRef);
+          
+          const slotRef = doc(db, 'slots', `${currentArtistEmail}_${bookingDate}`);
+          const slotSnap = await getDoc(slotRef);
+          if (slotSnap.exists()) {
+            const currentCount = slotSnap.data().count || 0;
+            if (currentCount > 0) {
+              await updateDoc(slotRef, { count: increment(-1) });
+            }
+          }
+          
+          await loadBookingsForDate(dateStr);
+          await loadAnalytics();
+        } catch (err) {
+          alert('Error deleting booking: ' + err.message);
+        }
+      });
+    });
+
+  } catch (err) {
+    console.error(err);
+    listDiv.innerHTML = "<p>Error loading bookings.</p>";
+  }
+}
+
+// Helper function to show all bookings (for debugging)
+async function loadAllBookings(artistEmail) {
+  const listDiv = document.getElementById('bookingsList');
+  listDiv.innerHTML = 'Loading all bookings...';
+  const q = query(collection(db, "bookings"), where("artistEmail", "==", artistEmail));
+  const snap = await getDocs(q);
+  if (snap.empty) {
+    listDiv.innerHTML = '<p>No bookings at all for this artist.</p>';
+    return;
+  }
+  const bookings = [];
+  snap.forEach(doc => bookings.push({ id: doc.id, ...doc.data() }));
+  let html = '<h3>All Bookings</h3>';
+  bookings.forEach(b => {
+    html += `<p><strong>${b.date}</strong> - ${b.name} (${b.client_email}) - ${b.status || 'pending'}</p>`;
+  });
+  html += '<button id="backToDateBtn" style="background:var(--gold); color:black; padding:8px 16px; margin-top:10px;">Back to Date View</button>';
+  listDiv.innerHTML = html;
+  document.getElementById('backToDateBtn').addEventListener('click', () => {
+    const selectedDate = document.getElementById('filterDate').value;
+    loadBookingsForDate(selectedDate);
+  });
+}
+
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  await signOut(auth);
+  location.href = "login.html";
+});
+</script>
+</body>
+</html>

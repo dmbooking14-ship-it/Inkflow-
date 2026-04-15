@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inkflow | Apply To Get Tattooed</title>
+
+<script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+<style>
+:root {
+    --gold: #c5a059;
+    --dark: #0d0d0d;
+    --glass: rgba(255,255,255,0.05);
+    --text: #eaeaea;
+}
+* { box-sizing: border-box; font-family: 'Inter', sans-serif; }
+body {
+    margin: 0;
+    background: url('https://images.unsplash.com/photo-1598373182133-52452f7691ef') no-repeat center/cover;
+    color: var(--text);
+}
+.overlay {
+    background: rgba(0,0,0,0.75);
+    min-height: 100vh;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+}
+.container {
+    width: 100%;
+    max-width: 500px;
+    background: var(--glass);
+    backdrop-filter: blur(15px);
+    border-radius: 16px;
+    padding: 25px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+h1 { text-align:center; color:var(--gold); font-size:26px; margin-bottom:5px; }
+.sub { text-align:center; font-size:13px; color:#aaa; margin-bottom:10px; }
+.alert {
+    background: rgba(197,160,89,0.1);
+    border: 1px solid var(--gold);
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+.scarcity {
+    font-size:12px;
+    color:#ff6b6b;
+    text-align:center;
+    margin-bottom:15px;
+}
+.progress { height:6px; background:#222; border-radius:10px; margin-bottom:20px; }
+.progress-bar { height:100%; width:33%; background:var(--gold); border-radius:10px; }
+.step { display:none; }
+.step.active { display:block; }
+label { font-size:13px; margin-bottom:6px; display:block; }
+input, select, textarea {
+    width: 100%; padding: 14px; margin-bottom: 15px;
+    border-radius: 8px; border: none;
+    background: #1a1a1a; color: white; font-size: 14px;
+}
+.buttons { display:flex; gap:10px; }
+button { flex:1; padding:14px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
+.next { background: var(--gold); color: black; }
+.prev { background: #333; color: white; }
+.upload {
+    border: 1px dashed var(--gold);
+    padding: 15px;
+    text-align: center;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+.upload.has-images {
+    background: rgba(197,160,89,0.15);
+    border-style: solid;
+}
+.success {
+    display:none;
+    text-align:center;
+}
+.success h2 { color:var(--gold); }
+.disabled {
+    opacity:0.5;
+    pointer-events:none;
+}
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--gold);
+    color: black;
+    padding: 12px 24px;
+    border-radius: 40px;
+    font-weight: bold;
+    z-index: 1000;
+    animation: fadeInOut 3s forwards;
+}
+@keyframes fadeInOut {
+    0% { opacity:0; bottom:0; }
+    10% { opacity:1; bottom:20px; }
+    90% { opacity:1; bottom:20px; }
+    100% { opacity:0; bottom:0; }
+}
+.spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-top-color: black;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.status-box {
+    margin-top: 15px;
+    padding: 10px;
+    background: #0a0f14;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #0f0;
+    border: 1px solid #333;
+}
+</style>
+</head>
+<body>
+
+<div class="overlay">
+<div class="container" id="appContainer">
+    <div style="text-align:center; padding:30px; color:var(--gold);">Loading artist...</div>
+</div>
+</div>
+
+<script type="module">
+// ========== CONFIGURATION – REPLACE THESE! ==========
+const EMAILJS_PUBLIC_KEY = "y5W0rJbtknIb2xmx8";
+const EMAILJS_SERVICE_ID = "service_cyknh4s";
+const EMAILJS_TEMPLATE_ID = "template_dh33hpq";
+// ==================================================
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { 
+    getFirestore, collection, addDoc, query, where, getDocs, doc, onSnapshot, setDoc, increment 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyAtzW6DFuLB_7cz8Q7RqMtR9kaijEGhI3k",
+    authDomain: "inkflow-534f6.firebaseapp.com",
+    projectId: "inkflow-534f6"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+emailjs.init(EMAILJS_PUBLIC_KEY);
+
+const urlParams = new URLSearchParams(window.location.search);
+const artistParam = urlParams.get("artist");
+const container = document.getElementById('appContainer');
+
+function showToast(msg) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+function showError(title, message) {
+    container.innerHTML = `<h1>INKFLOW</h1><div style="text-align:center;padding:20px;"><h2 style="color:var(--gold);">⚠️ ${title}</h2><p>${message}</p><button onclick="location.reload()" style="background:var(--gold);color:black;padding:10px 20px;border:none;border-radius:8px;">Try Again</button></div>`;
+}
+
+function renderBookingForm(artistEmail, artistUsername, artistPricing, blockedDates = []) {
+    const minPrice = artistPricing.minPrice || 200;
+    const maxSlots = artistPricing.maxSlotsPerDay || 5;
+    const budgetOptions = artistPricing.budgetOptions || ['$200-500', '$500-1000', '$1000+'];
+    
+    container.innerHTML = `
+        <h1>INKFLOW</h1>
+        <div class="sub">Booking with @${artistUsername}</div>
+        <div class="alert">⚠️ Minimum booking starts at $${minPrice}<br>🚨 Not all requests are accepted</div>
+        <div class="scarcity" id="slotsText">Loading availability...</div>
+        <div class="progress"><div class="progress-bar" id="progress"></div></div>
+        <form id="bookingForm">
+            <input type="hidden" name="artistEmail" value="${artistEmail}">
+            <div class="step active">
+                <label>Full Name</label><input type="text" name="name" id="clientName" required>
+                <label>Instagram</label><input type="text" name="ig" id="clientIg" required>
+                <label>Email (for reply)</label><input type="email" name="client_email" id="clientEmail" required placeholder="your@email.com">
+                <label>Select Date</label><input type="date" name="date" id="date" required>
+                <label>Ready to book?</label><select name="ready"><option>Yes</option><option>No</option></select>
+                <div class="buttons"><button type="button" class="next">Next</button></div>
+            </div>
+            <div class="step">
+                <label>Placement</label><input type="text" name="placement" required>
+                <label>Size (inches)</label><input type="number" name="size" required>
+                <label>Style</label><select name="style"><option>Blackwork</option><option>Realism</option><option>Fine Line</option><option>Other</option></select>
+                <div class="buttons"><button type="button" class="prev">Back</button><button type="button" class="next">Next</button></div>
+            </div>
+            <div class="step">
+                <label>Describe idea</label><textarea name="details" rows="3" required></textarea>
+                <div class="upload" id="uploadBtn">📎 Upload Images</div>
+                <input type="file" id="fallbackInput" accept="image/*" multiple style="display:none">
+                <input type="hidden" name="image_urls" id="imageUrls">
+                <label>Budget</label>
+                <select name="budget" id="budgetSelect">${budgetOptions.map(opt => `<option>${opt}</option>`).join('')}</select>
+                <button type="button" class="next" id="submitBtn">Apply Now</button>
+            </div>
+        </form>
+        <div class="success" id="success"><h2>Request Sent ✅</h2><p>You'll hear back within 24h.</p></div>
+        <div class="status-box" id="statusBox">Status: Ready</div>
+    `;
+
+    const statusBox = document.getElementById('statusBox');
+    function setStatus(text) { statusBox.textContent = 'Status: ' + text; console.log(text); }
+
+    // Slots
+    const dateInput = document.getElementById('date');
+    const slotsText = document.getElementById('slotsText');
+    const submitBtn = document.getElementById('submitBtn');
+    let unsubscribe = null;
+    dateInput.min = new Date().toISOString().split('T')[0];
+
+    dateInput.addEventListener('change', () => {
+        const date = dateInput.value;
+        if (!date) return;
+        if (blockedDates.includes(date)) {
+            alert('This date is not available for booking.');
+            dateInput.value = '';
+            return;
+        }
+        const ref = doc(db, 'slots', `${artistEmail}_${date}`);
+        if (unsubscribe) unsubscribe();
+        unsubscribe = onSnapshot(ref, (snap) => {
+            const booked = snap.exists() ? (snap.data().count || 0) : 0;
+            const remaining = Math.max(0, maxSlots - booked);
+            slotsText.textContent = `🔥 Only ${remaining} slot${remaining!==1?'s':''} left`;
+            const disabled = remaining <= 0;
+            submitBtn.disabled = disabled;
+            submitBtn.textContent = disabled ? 'Fully Booked' : 'Apply Now';
+        });
+    });
+
+    // Steps
+    const steps = document.querySelectorAll('.step');
+    const progress = document.getElementById('progress');
+    let cur = 0;
+    function showStep(i) { steps.forEach((s,j)=>s.classList.toggle('active',j===i)); progress.style.width = ((i+1)/steps.length)*100+'%'; }
+    document.querySelectorAll('.next').forEach(b=>b.addEventListener('click',e=>{e.preventDefault(); if(b.id!=='submitBtn' && cur<steps.length-1){cur++;showStep(cur);}}));
+    document.querySelectorAll('.prev').forEach(b=>b.addEventListener('click',e=>{e.preventDefault(); if(cur>0){cur--;showStep(cur);}}));
+
+    // Upload
+    const uploadBtn = document.getElementById('uploadBtn');
+    const imageUrls = document.getElementById('imageUrls');
+    const fallback = document.getElementById('fallbackInput');
+    let uploadCount = 0;
+
+    try {
+        const widget = cloudinary.createUploadWidget({
+            cloudName: 'dfkg9iswc', uploadPreset: 'inkflow_images', multiple: true, maxFiles: 5
+        }, (err, res) => {
+            if (!err && res?.event === 'success') {
+                const url = res.info.secure_url;
+                imageUrls.value = imageUrls.value ? imageUrls.value + ',' + url : url;
+                uploadCount++;
+                uploadBtn.innerHTML = `✅ ${uploadCount} image${uploadCount!==1?'s':''}`;
+                uploadBtn.classList.add('has-images');
+                showToast('Image uploaded');
+            }
+        });
+        uploadBtn.addEventListener('click', () => widget.open());
+    } catch(e) {
+        uploadBtn.addEventListener('click', () => fallback.click());
+    }
+
+    fallback.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        for (let f of files) {
+            const fd = new FormData(); fd.append('file', f); fd.append('upload_preset','inkflow_images'); fd.append('cloud_name','dfkg9iswc');
+            const resp = await fetch('https://api.cloudinary.com/v1_1/dfkg9iswc/image/upload', {method:'POST',body:fd});
+            const data = await resp.json();
+            imageUrls.value = imageUrls.value ? imageUrls.value + ',' + data.secure_url : data.secure_url;
+            uploadCount++;
+        }
+        uploadBtn.innerHTML = `✅ ${uploadCount} image${uploadCount!==1?'s':''}`;
+        uploadBtn.classList.add('has-images');
+        fallback.value = '';
+    });
+
+    // Submission
+    async function handleSubmit() {
+        const form = document.getElementById('bookingForm');
+        const data = Object.fromEntries(new FormData(form));
+        if (blockedDates.includes(data.date)) {
+            alert('This date is not available.');
+            return;
+        }
+        setStatus('Submitting...');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner"></span> Submitting...';
+
+        data.artistEmail = artistEmail;
+        data.createdAt = new Date();
+        data.status = 'pending';
+
+        // Slot increment
+        setStatus('Updating availability...');
+        const slotRef = doc(db, 'slots', `${artistEmail}_${data.date}`);
+        try {
+            await setDoc(slotRef, { count: increment(1) }, { merge: true });
+        } catch(err) {
+            setStatus('Slot update failed: ' + err.message);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Apply Now';
+            return;
+        }
+
+        // Save booking
+        setStatus('Saving booking...');
+        try {
+            await addDoc(collection(db, 'bookings'), data);
+        } catch(err) {
+            setStatus('Booking save failed: ' + err.message);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Apply Now';
+            return;
+        }
+
+        // Email
+        setStatus('Sending email...');
+        const imgHtml = data.image_urls ? data.image_urls.split(',').map(u=>`<a href="${u}">View</a>`).join('<br>') : 'None';
+        const params = {
+            to_email: artistEmail,
+            client_name: data.name,
+            client_ig: data.ig,
+            client_email: data.client_email,
+            date: data.date,
+            placement: data.placement,
+            size: data.size,
+            style: data.style,
+            budget: data.budget,
+            details: data.details,
+            ready: data.ready,
+            image_links: imgHtml
+        };
+        try {
+            await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params);
+            setStatus('Email sent!');
+        } catch(err) {
+            setStatus('Email failed but booking saved.');
+        }
+
+        form.style.display = 'none';
+        document.getElementById('success').style.display = 'block';
+        if (unsubscribe) unsubscribe();
+    }
+
+    submitBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        handleSubmit();
+    });
+}
+
+// Init
+(async () => {
+    if (!artistParam) return showError('Missing Artist', 'No artist in URL.');
+    const q = query(collection(db, 'artists'), where('username', '==', artistParam.toLowerCase()));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+        const a = snap.docs[0].data();
+        const pricing = {
+            minPrice: a.minPrice || 200,
+            maxSlotsPerDay: a.maxSlotsPerDay || 5,
+            budgetOptions: a.budgetOptions || ['$200-500', '$500-1000', '$1000+']
+        };
+        const blocked = a.blockedDates || [];
+        renderBookingForm(a.email, a.username, pricing, blocked);
+    } else {
+        showError('Artist Not Found', `@${artistParam} not found.`);
+    }
+})();
+</script>
+</body>
+</html>

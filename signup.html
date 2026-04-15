@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Signup · Inkflow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at 30% 10%, #1a232f 0%, #0e141b 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .signup-card {
+      background: rgba(18, 26, 34, 0.85);
+      backdrop-filter: blur(12px);
+      width: 100%;
+      max-width: 430px;
+      padding: 2.6rem 2.2rem 2.3rem;
+      border-radius: 38px;
+      border: 1px solid rgba(197,160,89,0.2);
+      box-shadow: 0 30px 40px -15px rgba(0,0,0,0.6);
+    }
+    h1 { font-size: 2.3rem; font-weight: 600; color: #f0f6fc; margin-bottom: 0.35rem; }
+    .subhead { font-size: 0.95rem; color: #b0c7db; margin-bottom: 2.2rem; border-left: 3px solid #c5a059; padding-left: 16px; }
+    .input-field {
+      width: 100%; padding: 1rem 1.3rem; font-size: 1rem;
+      background: #0f1a24; border: 1.5px solid #293e52; border-radius: 26px;
+      color: #e9f0f8; outline: none; margin-bottom: 1.7rem;
+    }
+    .input-field:focus { border-color: #c5a059; }
+    .input-wrapper { position: relative; }
+    .password-toggle {
+      position: absolute; right: 16px; top: 18px;
+      background: none; border: none; color: #aaa; font-size: 22px; cursor: pointer;
+    }
+    .signup-btn {
+      width: 100%; padding: 1rem; font-size: 1.15rem; font-weight: 600;
+      background: linear-gradient(145deg, #1d4663 0%, #2b6c9e 100%);
+      border: none; border-radius: 44px; color: white; cursor: pointer;
+      margin: 0.5rem 0 1.6rem;
+    }
+    .msg-area { text-align: center; min-height: 30px; color: #f5a3a3; }
+    .login-link { text-align: center; color: #aaa; }
+    .login-link a { color: #c5a059; text-decoration: none; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<div class="signup-card">
+  <h1>Create account</h1>
+  <div class="subhead">Join Inkflow · 7‑day free trial</div>
+
+  <input id="email" class="input-field" type="email" placeholder="Email address" autocomplete="email">
+  
+  <div class="input-wrapper">
+    <input id="password" class="input-field" type="password" placeholder="Password" autocomplete="new-password">
+    <button type="button" class="password-toggle" id="togglePassword">👁️</button>
+  </div>
+
+  <input id="username" class="input-field" type="text" placeholder="Choose a username">
+
+  <button class="signup-btn" id="signupBtn">Start free trial</button>
+  <p id="msg" class="msg-area"></p>
+  <div class="login-link">Already have an account? <a href="login.html">Log in</a></div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, collection, query, where, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAtzW6DFuLB_7cz8Q7RqMtR9kaijEGhI3k",
+    authDomain: "inkflow-534f6.firebaseapp.com",
+    projectId: "inkflow-534f6"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const email = document.getElementById('email');
+  const password = document.getElementById('password');
+  const username = document.getElementById('username');
+  const signupBtn = document.getElementById('signupBtn');
+  const msg = document.getElementById('msg');
+  const toggleBtn = document.getElementById('togglePassword');
+
+  toggleBtn.addEventListener('click', () => {
+    const type = password.type === 'password' ? 'text' : 'password';
+    password.type = type;
+    toggleBtn.textContent = type === 'password' ? '👁️' : '🙈';
+  });
+
+  async function handleSignup() {
+    const emailVal = email.value.trim();
+    const passwordVal = password.value;
+    const usernameVal = username.value.trim().toLowerCase();
+
+    if (!emailVal || !passwordVal || !usernameVal) {
+      msg.innerText = "All fields are required";
+      return;
+    }
+    if (!/^[a-zA-Z0-9_-]{3,20}$/.test(usernameVal)) {
+      msg.innerText = "Username must be 3-20 characters (letters, numbers, _ or -)";
+      return;
+    }
+
+    signupBtn.disabled = true;
+    signupBtn.textContent = 'Creating account...';
+
+    try {
+      // Check username uniqueness
+      const q = query(collection(db, "artists"), where("username", "==", usernameVal));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        msg.innerText = "Username already taken";
+        signupBtn.disabled = false;
+        signupBtn.textContent = 'Start free trial';
+        return;
+      }
+
+      const userCred = await createUserWithEmailAndPassword(auth, emailVal, passwordVal);
+      const uid = userCred.user.uid;
+
+      // Create artist profile with trial
+      await setDoc(doc(db, "artists", uid), {
+        email: emailVal,
+        username: usernameVal,
+        displayName: emailVal.split('@')[0],
+        createdAt: new Date(),
+        status: 'trial',
+        trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        minPrice: 200,
+        maxSlotsPerDay: 5,
+        budgetOptions: ['$200-500', '$500-1000', '$1000+'],
+        paymentDetails: '',
+        paymentMessage: '',
+        blockedDates: []
+      });
+
+      location.href = "dashboard.html";
+    } catch (error) {
+      console.error(error);
+      if (error.code === 'auth/email-already-in-use') msg.innerText = "Email already registered";
+      else if (error.code === 'auth/weak-password') msg.innerText = "Password too weak";
+      else msg.innerText = "Signup failed";
+      signupBtn.disabled = false;
+      signupBtn.textContent = 'Start free trial';
+    }
+  }
+
+  signupBtn.addEventListener('click', handleSignup);
+</script>
+</body>
+</html>
