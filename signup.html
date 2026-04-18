@@ -50,6 +50,8 @@
     .msg-area { text-align: center; min-height: 30px; color: #f5a3a3; }
     .login-link { text-align: center; color: #aaa; }
     .login-link a { color: #c5a059; text-decoration: none; font-weight: 600; }
+    .terms-text { margin-top: 16px; font-size: 12px; color: #aaa; text-align: center; }
+    .terms-text a { color: #c5a059; }
   </style>
 </head>
 <body>
@@ -70,6 +72,9 @@
   <button class="signup-btn" id="signupBtn">Start free trial</button>
   <p id="msg" class="msg-area"></p>
   <div class="login-link">Already have an account? <a href="login.html">Log in</a></div>
+  <div class="terms-text">
+    By signing up, you agree to our <a href="terms.html">Terms of Service</a>
+  </div>
 </div>
 
 <script type="module">
@@ -101,7 +106,17 @@
   });
 
   async function handleSignup() {
-    const emailVal = email.value.trim();
+    // Check if trial already used on this device
+    if (localStorage.getItem('inkflow_trial_used')) {
+      if (!confirm('You have already used a free trial on this device. Continue anyway?')) {
+        return;
+      }
+    }
+
+    let emailVal = email.value.trim().toLowerCase();
+    // Remove plus addressing (e.g., user+trial@gmail.com → user@gmail.com)
+    emailVal = emailVal.replace(/\+.*@/, '@');
+    
     const passwordVal = password.value;
     const usernameVal = username.value.trim().toLowerCase();
 
@@ -138,7 +153,7 @@
         displayName: emailVal.split('@')[0],
         createdAt: new Date(),
         status: 'trial',
-        trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         minPrice: 200,
         maxSlotsPerDay: 5,
         budgetOptions: ['$200-500', '$500-1000', '$1000+'],
@@ -147,6 +162,9 @@
         blockedDates: []
       });
 
+      // Mark trial as used on this device
+      localStorage.setItem('inkflow_trial_used', 'true');
+      
       location.href = "dashboard.html";
     } catch (error) {
       console.error(error);

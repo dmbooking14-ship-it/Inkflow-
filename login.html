@@ -137,40 +137,32 @@
       if (ENFORCE_PAYMENT) {
         const now = new Date();
         
-        // Ensure trial fields exist (in‑memory fallback)
         if (!artistData.status) artistData.status = 'trial';
         if (!artistData.trialEndsAt) artistData.trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
         
-        // Check trial expiry
         if (artistData.status === 'trial' && artistData.trialEndsAt.toDate() < now) {
           location.href = "payment.html";
           return;
         }
         
-        // Check paid subscription expiry (monthly/annual)
         if (artistData.status === 'active' && artistData.plan && artistData.plan !== 'lifetime') {
           if (!artistData.subscriptionEndsAt) {
             location.href = "payment.html";
             return;
           }
           if (artistData.subscriptionEndsAt.toDate() < now) {
-            // Subscription expired, update status
-            try {
-              await updateDoc(artistRef, { status: 'expired' });
-            } catch (e) { /* ignore */ }
+            try { await updateDoc(artistRef, { status: 'expired' }); } catch (e) {}
             location.href = "payment.html";
             return;
           }
         }
         
-        // Block expired accounts
         if (artistData.status === 'expired') {
           location.href = "payment.html";
           return;
         }
       }
 
-      // Success—redirect to dashboard
       location.href = "dashboard.html";
     } catch (error) {
       console.error('Login error:', error);

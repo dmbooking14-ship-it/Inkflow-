@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>InkFlow · Upgrade to Pro</title>
+  <title>InkFlow · Reactivate Access</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -27,26 +27,14 @@
     }
     h1 { color: #c5a059; font-size: 28px; margin-bottom: 8px; }
     .subhead { color: #aaa; margin-bottom: 24px; font-size: 14px; }
-    .plan-options {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+    .price-tag {
+      background: #1a2a35;
+      border-radius: 16px;
+      padding: 24px;
       margin-bottom: 24px;
     }
-    .plan-btn {
-      background: transparent;
-      border: 1.5px solid #3a4a5a;
-      border-radius: 40px;
-      padding: 14px;
-      color: white;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .plan-btn.selected {
-      border-color: #c5a059;
-      background: rgba(197,160,89,0.1);
-    }
+    .price { font-size: 56px; font-weight: bold; color: white; }
+    .price span { font-size: 20px; color: #aaa; }
     .payment-instructions {
       background: #0f1a24;
       border-radius: 16px;
@@ -72,53 +60,37 @@
       color: #aaa;
       margin-top: 16px;
     }
-    .back-link { color: #c5a059; margin-top: 20px; display: inline-block; }
+    .back-link { color: #c5a059; margin-top: 20px; display: inline-block; text-decoration: none; }
+    .back-link:hover { text-decoration: underline; }
   </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="container">
   <div class="card">
-    <h1>✨ Upgrade to Pro</h1>
-    <div class="subhead">Your free trial has ended. Choose a plan to continue.</div>
+    <h1>✨ Reactivate Access</h1>
+    <div class="subhead">Your subscription has expired. Renew to continue managing bookings.</div>
 
-    <div class="plan-options">
-      <button class="plan-btn selected" data-plan="monthly">Monthly – $19/month</button>
-      <button class="plan-btn" data-plan="annual">Annual – $190/year (save 17%)</button>
-      <button class="plan-btn" data-plan="lifetime">Lifetime – $297 one‑time</button>
+    <div class="price-tag">
+      <div class="price">$19<span>/month</span></div>
+      <p style="margin-top:8px; color:#aaa;">Recurring · Cancel anytime</p>
     </div>
 
     <div class="payment-instructions">
-      <h3>📧 How to Pay</h3>
+      <h3>📧 How to Renew</h3>
       <p><strong>1.</strong> Send payment via <strong>PayPal</strong> to:</p>
       <a href="https://paypal.me/yourusername" target="_blank" class="paypal-link">paypal.me/yourusername</a>
-      <p><strong>2.</strong> In the payment note, include:</p>
-      <ul style="margin-left:20px; margin-bottom:15px;">
-        <li>Your <strong>artist username</strong></li>
-        <li>The plan you chose (<span id="selectedPlanDisplay">monthly</span>)</li>
-      </ul>
-      <p><strong>3.</strong> Your account will be activated within 24 hours after payment is confirmed.</p>
-      <p style="margin-top:16px;"><strong>Alternative:</strong> Bank transfer available – DM @inkflowautomation on Instagram.</p>
+      <p><strong>2.</strong> In the payment note, include your <strong>artist username and email used for signup</strong>.</p>
+      <p><strong>3.</strong> Your access will be restored within 24 hours after payment is confirmed.</p>
+      <p style="margin-top:16px;"><strong>Alternative payment:</strong> Bank transfer available — DM <a href="https://instagram.com/inflow_automation_" style="color:#c5a059;">@inflow_automation_</a> on Instagram for details.</p>
     </div>
 
     <div class="note">
-      <p>Questions? <a href="https://instagram.com/inkflowautomation" style="color:#c5a059;">@inkflowautomation</a></p>
+      <p>Questions? Reach out to <a href="https://instagram.com/inflow_automation_" style="color:#c5a059;">@inflow_automation_</a></p>
     </div>
 
     <a href="login.html" class="back-link">← Back to login</a>
   </div>
 </div>
-
-<script>
-  // Plan selector highlight and update display text
-  const planBtns = document.querySelectorAll('.plan-btn');
-  const planDisplay = document.getElementById('selectedPlanDisplay');
-  planBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      planBtns.forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      planDisplay.textContent = btn.dataset.plan;
-    });
-  });
-</script>
 </body>
 </html>
