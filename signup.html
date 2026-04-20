@@ -147,25 +147,32 @@
       const uid = userCred.user.uid;
 
       // Create artist profile with trial
-      await setDoc(doc(db, "artists", uid), {
-        email: emailVal,
-        username: usernameVal,
-        displayName: emailVal.split('@')[0],
-        createdAt: new Date(),
-        status: 'trial',
-        trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        minPrice: 200,
-        maxSlotsPerDay: 5,
-        budgetOptions: ['$200-500', '$500-1000', '$1000+'],
-        paymentDetails: '',
-        paymentMessage: '',
-        blockedDates: []
-      });
+await setDoc(doc(db, "artists", uid), {
+  email: emailVal,
+  username: usernameVal,
+  displayName: emailVal.split('@')[0],
+  createdAt: new Date(),
+  status: 'trial',
+  trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  minPrice: 200,
+  maxSlotsPerDay: 5,
+  budgetOptions: ['$200-500', '$500-1000', '$1000+'],
+  paymentDetails: '',
+  paymentMessage: '',
+  blockedDates: []
+});
 
-      // Mark trial as used on this device
-      localStorage.setItem('inkflow_trial_used', 'true');
-      
-      location.href = "dashboard.html";
+// Mark trial as used on this device
+localStorage.setItem('inkflow_trial_used', 'true');
+
+// Ask to join WhatsApp community
+const joinGroup = confirm("✅ Account created! Your 7‑day free trial has started.\n\n📲 Join the InkFlow Community on WhatsApp for updates, support, and early access to new features.\n\nTap 'OK' to join now, or 'Cancel' to go to your dashboard.");
+
+if (joinGroup) {
+    window.open("https://chat.whatsapp.com/IqhVSh9QVmP3f3XbkgEFyb", "_blank");
+}
+
+location.href = "dashboard.html";
     } catch (error) {
       console.error(error);
       if (error.code === 'auth/email-already-in-use') msg.innerText = "Email already registered";
