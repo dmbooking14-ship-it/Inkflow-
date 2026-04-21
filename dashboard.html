@@ -197,6 +197,32 @@
     }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
+  
+  <!-- Firebase App Check -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
+  
+  const firebaseConfig = {
+    apiKey: "AIzaSyAtzW6DFuLB_7cz8Q7RqMtR9kaijEGhI3k",
+    authDomain: "inkflow-534f6.firebaseapp.com",
+    projectId: "inkflow-534f6"
+  };
+  
+  const app = initializeApp(firebaseConfig);
+  
+  // Initialize App Check (only on non-localhost domains)
+  if (window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1')) {
+    const appCheck = initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider('6LdHhMIsAAAAAIsNvJaoJi3zMStpATt_x8iHl4Vt'),
+      isTokenAutoRefreshEnabled: true
+    });
+    console.log('✅ App Check initialized');
+  } else {
+    console.log('⏭️ App Check skipped (localhost)');
+  }
+</script>
 </head>
 <body>
 
@@ -299,10 +325,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, query, where, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// ========== CONFIGURATION – REPLACE THESE! ==========
-const EMAILJS_PUBLIC_KEY = "y5W0rJbtknIb2xmx8";
-const EMAILJS_SERVICE_ID = "service_cyknh4s";
-const EMAILJS_APPROVED_TEMPLATE_ID = "template_8yfw2ux";
+// ========== CONFIGURATION ==========
+const EMAILJS_PUBLIC_KEY = "{{EMAILJS_PUBLIC_KEY}}";
+const EMAILJS_SERVICE_ID = "{{EMAILJS_SERVICE_ID}}";
+const EMAILJS_APPROVED_TEMPLATE_ID = "{{EMAILJS_APPROVED_TEMPLATE_ID}}";
+// ==================================
 
 // ========== MASTER PAYMENT SWITCH ==========
 const ENFORCE_PAYMENT = false; // Change to true to enforce trials/payments
