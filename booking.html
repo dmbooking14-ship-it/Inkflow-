@@ -155,6 +155,14 @@ button { flex:1; padding:14px; border:none; border-radius:8px; font-weight:bold;
     padding-top: 15px;
 }
 .trust-badge span { margin: 0 8px; }
+.error-banner {
+    background: #8b1a1a;
+    color: white;
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    font-size: 14px;
+}
 </style>
 <!-- Firebase App Check -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js"></script>
@@ -191,10 +199,12 @@ button { flex:1; padding:14px; border:none; border-radius:8px; font-weight:bold;
 </div>
 
 <script type="module">
-// ========== CONFIGURATION – REPLACED BY VERCEL ENV VARS ==========
+// ========== CONFIGURATION ==========
 const EMAILJS_PUBLIC_KEY = "y5W0rJbtknIb2xmx8";
 const EMAILJS_SERVICE_ID = "service_cyknh4s";
-const EMAILJS_TEMPLATE_ID = "template_dh33hpq"; =================================================================
+const EMAILJS_TEMPLATE_ID = "template_dh33hpq";
+// ==================================
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { 
     getFirestore, collection, addDoc, query, where, getDocs, doc, onSnapshot, setDoc, increment 
@@ -223,7 +233,28 @@ function showToast(msg) {
 }
 
 function showError(title, message) {
-    container.innerHTML = `<h1>INKFLOW</h1><div style="text-align:center;padding:20px;"><h2 style="color:var(--gold);">⚠️ ${title}</h2><p>${message}</p><button onclick="location.reload()" style="background:var(--gold);color:black;padding:10px 20px;border:none;border-radius:8px;">Try Again</button></div>`;
+    container.innerHTML = `
+        <h1>INKFLOW</h1>
+        <div style="text-align:center;padding:20px;">
+            <h2 style="color:var(--gold);">⚠️ ${title}</h2>
+            <p>${message}</p>
+            <button onclick="location.reload()" style="background:var(--gold);color:black;padding:10px 20px;border:none;border-radius:8px;">Try Again</button>
+        </div>
+    `;
+}
+
+// Temporary on‑screen error display for artist lookup
+function showLookupError(message) {
+    container.innerHTML = `
+        <h1>INKFLOW</h1>
+        <div class="error-banner">
+            <strong>🔍 Artist Lookup Error:</strong> ${message}
+        </div>
+        <div style="text-align:center;padding:20px;">
+            <p>Please check the artist username or try again later.</p>
+            <button onclick="location.reload()" style="background:var(--gold);color:black;padding:10px 20px;border:none;border-radius:8px;">Retry</button>
+        </div>
+    `;
 }
 
 function renderBookingForm(artistEmail, artistUsername, artistPricing, blockedDates = []) {
@@ -305,7 +336,7 @@ function renderBookingForm(artistEmail, artistUsername, artistPricing, blockedDa
             <div class="info-box">
                 <p style="margin:0;">📧 The artist has been notified instantly and will get back to you within 48 hours.</p>
             </div>
-            <p style="font-size:14px; margin-top:20px;">We will also send a confirmation to your email once your booking is approved by artist .</p>
+            <p style="font-size:14px; margin-top:20px;">We will also send a confirmation to your email once your booking is approved by artist.</p>
             <button class="close-btn" onclick="window.location.href='https://google.com'">Close Window</button>
         </div>
         
@@ -486,12 +517,36 @@ function renderBookingForm(artistEmail, artistUsername, artistPricing, blockedDa
     });
 }
 
-// Init
+// Init with error display
 (async () => {
-    if (!artistParam) return showError('Missing Artist', 'No artist in URL.');
-    const q = query(collection(db, 'artists'), where('username', '==', artistParam.toLowerCase()));
-    const snap = await getDocs(q);
-    if (!snap.empty) {
+    if (!artistParam) {
+        showLookupError('No artist username provided in the URL.');
+        return;
+    }
+    
+    try {
+        const q = query(collection(db, 'artists'), where('username', '==', artistParam.toLowerCase()));
+        const snap = await getDocs(q);
+        
+        if (snap.empty) {
+            // Try exact case as fallback
+            const qExact = query(collection(db, 'artists'), where('username', '==', artistParam));
+            const snapExact = await getDocs(qExact);
+            if (snapExact.empty) {
+                showLookupError(`Artist "@${artistParam}" not found in database.`);
+                return;
+            }
+            const a = snapExact.docs[0].data();
+            const pricing = {
+                minPrice: a.minPrice || 200,
+                maxSlotsPerDay: a.maxSlotsPerDay || 5,
+                budgetOptions: a.budgetOptions || ['$200-500', '$500-1000', '$1000+']
+            };
+            const blocked = a.blockedDates || [];
+            renderBookingForm(a.email, a.username, pricing, blocked);
+            return;
+        }
+        
         const a = snap.docs[0].data();
         const pricing = {
             minPrice: a.minPrice || 200,
@@ -500,8 +555,15 @@ function renderBookingForm(artistEmail, artistUsername, artistPricing, blockedDa
         };
         const blocked = a.blockedDates || [];
         renderBookingForm(a.email, a.username, pricing, blocked);
-    } else {
-        showError('Artist Not Found', `@${artistParam} not found.`);
+    } catch (error) {
+        console.error('Lookup error:', error);
+        let errorMsg = error.message;
+        if (error.code === 'permission-denied') {
+            errorMsg = 'Firestore permission denied. Check security rules.';
+        } else if (error.code === 'unavailable') {
+            errorMsg = 'Network error. Check your internet connection.';
+        }
+        showLookupError(errorMsg);
     }
 })();
 </script>
